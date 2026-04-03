@@ -49,62 +49,83 @@ export default function TopicPage() {
   }
 
   return (
-    <div className="panel">
-      <h1>Topic Flashcard</h1>
+    <div className="page-stack">
+      <div className="panel">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Topic Mode</p>
+            <h1>Generate a topic flashcard</h1>
+            <p className="muted">
+              Enter a topic and difficulty to generate one flashcard with cache-first lookup.
+            </p>
+          </div>
+        </div>
 
-      <form onSubmit={handleSubmit} className="form">
-        <label>
-          Topic
-          <input value={topic} onChange={(e) => setTopic(e.target.value)} />
-        </label>
+        <form onSubmit={handleSubmit} className="form">
+          <div className="form-grid">
+            <label>
+              Topic
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} />
+            </label>
 
-        <label>
-          Difficulty
-          <input
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-          />
-        </label>
+            <label>
+              Difficulty
+              <input
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+              />
+            </label>
 
-        <label>
-          Source Language
-          <input
-            value={sourceLanguage}
-            onChange={(e) => setSourceLanguage(e.target.value)}
-          />
-        </label>
+            <label>
+              Source Language
+              <input
+                value={sourceLanguage}
+                onChange={(e) => setSourceLanguage(e.target.value)}
+              />
+            </label>
 
-        <label>
-          Target Language
-          <input
-            value={targetLanguage}
-            onChange={(e) => setTargetLanguage(e.target.value)}
-          />
-        </label>
+            <label>
+              Target Language
+              <input
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value)}
+              />
+            </label>
 
-        <label>
-          Text Type
-          <input
-            value={textType}
-            onChange={(e) => setTextType(e.target.value)}
-          />
-        </label>
+            <label>
+              Text Type
+              <input
+                value={textType}
+                onChange={(e) => setTextType(e.target.value)}
+              />
+            </label>
 
-        <label>
-          Number of Options
-          <input
-            type="number"
-            min={2}
-            max={8}
-            value={numOptions}
-            onChange={(e) => setNumOptions(Number(e.target.value))}
-          />
-        </label>
+            <label>
+              Number of Options
+              <input
+                type="number"
+                min={2}
+                max={8}
+                value={numOptions}
+                onChange={(e) => setNumOptions(Number(e.target.value))}
+              />
+            </label>
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Generating..." : "Generate"}
-        </button>
-      </form>
+          <div className="action-row">
+            <button type="submit" className="primary-button" disabled={loading}>
+              {loading ? "Generating..." : "Generate Flashcard"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {loading && (
+        <div className="panel loading-panel">
+          <div className="spinner" />
+          <p>Generating your flashcard...</p>
+        </div>
+      )}
 
       {error && <ErrorMessage message={error} />}
       {result && <FlashcardResult card={result} />}
