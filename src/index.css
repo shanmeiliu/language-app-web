@@ -172,6 +172,11 @@ textarea {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.panel .action-row {
+  margin-top: 20px;
 }
 
 .loading-panel {
@@ -307,6 +312,12 @@ textarea {
   margin-top: 6px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.primary-button,
+.secondary-button,
+.tab-button {
+  margin-top: 4px;
 }
 
 @media (max-width: 720px) {
