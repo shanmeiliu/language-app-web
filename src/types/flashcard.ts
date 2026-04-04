@@ -18,6 +18,7 @@ export type PhraseFlashcardRequest = {
   target_language: string;
   num_options: number;
   text_type?: string | null;
+  exclude_source_texts?: string[];
 };
 
 export type TopicFlashcardRequest = {
@@ -29,7 +30,6 @@ export type TopicFlashcardRequest = {
   text_type?: string | null;
   exclude_source_texts?: string[];
 };
-
 
 export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 

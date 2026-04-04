@@ -475,3 +475,12 @@ select {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.session-meta {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}

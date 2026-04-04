@@ -13,14 +13,22 @@ export default function TopicPage() {
   const [textType, setTextType] = useState("phrase");
 
   const [loading, setLoading] = useState(false);
+  const [loadingAnother, setLoadingAnother] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<FlashcardResponse | null>(null);
+  const [seenSourceTexts, setSeenSourceTexts] = useState<string[]>([]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function requestFlashcard(
+    showInitialLoading: boolean,
+    excludeSeen: boolean = true
+  ) {
+    if (showInitialLoading) {
+      setLoading(true);
+    } else {
+      setLoadingAnother(true);
+    }
+
     setError("");
-    setResult(null);
 
     try {
       const res = await generateTopicFlashcard({
@@ -30,9 +38,14 @@ export default function TopicPage() {
         target_language: targetLanguage,
         num_options: numOptions,
         text_type: textType || null,
+        exclude_source_texts: excludeSeen ? seenSourceTexts : [],
       });
 
       setResult(res);
+
+      if (!seenSourceTexts.includes(res.source_text)) {
+        setSeenSourceTexts((prev) => [...prev, res.source_text]);
+      }
     } catch (err: any) {
       console.error(err);
 
@@ -45,7 +58,24 @@ export default function TopicPage() {
       }
     } finally {
       setLoading(false);
+      setLoadingAnother(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setResult(null);
+    setSeenSourceTexts([]);
+    await requestFlashcard(true, false);
+  }
+
+  async function handleTryAnother() {
+    await requestFlashcard(false, true);
+  }
+
+  function handleResetSeen() {
+    setSeenSourceTexts([]);
+    setError("");
   }
 
   return (
@@ -118,6 +148,15 @@ export default function TopicPage() {
             </button>
           </div>
         </form>
+
+        {seenSourceTexts.length > 0 && (
+          <div className="session-meta">
+            <p className="muted">Seen this session: {seenSourceTexts.length}</p>
+            <button type="button" className="secondary-button" onClick={handleResetSeen}>
+              Reset Seen Cards
+            </button>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -128,7 +167,14 @@ export default function TopicPage() {
       )}
 
       {error && <ErrorMessage message={error} />}
-      {result && <FlashcardResult key={result.source_text} card={result} />}
+      {result && (
+        <FlashcardResult
+          key={result.source_text}
+          card={result}
+          onTryAnother={handleTryAnother}
+          loadingNext={loadingAnother}
+        />
+      )}
     </div>
   );
 }

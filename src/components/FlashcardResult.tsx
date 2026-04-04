@@ -3,9 +3,15 @@ import type { FlashcardResponse } from "../types/flashcard";
 
 type Props = {
   card: FlashcardResponse;
+  onTryAnother?: () => void;
+  loadingNext?: boolean;
 };
 
-export default function FlashcardResult({ card }: Props) {
+export default function FlashcardResult({
+  card,
+  onTryAnother,
+  loadingNext = false,
+}: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -87,13 +93,26 @@ export default function FlashcardResult({ card }: Props) {
               Check Answer
             </button>
           ) : (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetAnswer}
-            >
-              Try Again
-            </button>
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleResetAnswer}
+              >
+                Try Again
+              </button>
+
+              {onTryAnother && (
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={onTryAnother}
+                  disabled={loadingNext}
+                >
+                  {loadingNext ? "Loading..." : "Try Another"}
+                </button>
+              )}
+            </>
           )}
         </div>
 
