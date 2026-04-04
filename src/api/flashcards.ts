@@ -12,19 +12,22 @@ const api = axios.create({
 export async function generatePhraseFlashcard(
   payload: PhraseFlashcardRequest
 ): Promise<FlashcardResponse> {
-  const res = await api.post("/api/flashcards/phrase", payload);
+  const res = await api.post<FlashcardResponse>("/api/flashcards/phrase", payload);
   return res.data;
 }
 
 export async function generateTopicFlashcard(
   payload: TopicFlashcardRequest
 ): Promise<FlashcardResponse> {
-  const res = await api.post("/api/flashcards/topic", payload);
+  const res = await api.post<FlashcardResponse>("/api/flashcards/topic", payload);
   return res.data;
 }
 
 export async function getNextGameQuestion(
-  payload: TopicFlashcardRequest & { exclude_source_texts?: string[]; batch_size?: number }
+  payload: TopicFlashcardRequest & {
+    exclude_source_texts?: string[];
+    batch_size?: number;
+  }
 ): Promise<FlashcardResponse> {
   const res = await api.post<FlashcardResponse>("/api/game/next-question", payload);
   return res.data;

@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { getNextGameQuestion } from "../api/flashcards";
 import ErrorMessage from "../components/ErrorMessage";
 import GameCard from "../components/GameCard";
-import { getNextGameQuestion } from "../api/flashcards";
-
 import type {
   DifficultyLevel,
   FlashcardResponse,
@@ -39,42 +38,87 @@ export default function GamePage() {
   const [gameOver, setGameOver] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [prefetching, setPrefetching] = useState(false);
   const [error, setError] = useState("");
   const [card, setCard] = useState<FlashcardResponse | null>(null);
   const [seenSourceTexts, setSeenSourceTexts] = useState<string[]>([]);
 
+  const prefetchedCardRef = useRef<FlashcardResponse | null>(null);
+
   const difficulty = useMemo(() => getDifficultyFromScore(score), [score]);
   const topic = useMemo(() => getTopicFromScore(score), [score]);
 
-  async function fetchNextCard(
+  function makePayload(
+    currentScore: number,
+    srcLang: string,
+    tgtLang: string,
+    seen: string[]
+  ): TopicFlashcardRequest & {
+    exclude_source_texts?: string[];
+    batch_size?: number;
+  } {
+    return {
+      topic: getTopicFromScore(currentScore),
+      difficulty: getDifficultyFromScore(currentScore),
+      source_language: srcLang,
+      target_language: tgtLang,
+      num_options: 4,
+      text_type: "phrase",
+      exclude_source_texts: seen,
+      batch_size: 5,
+    };
+  }
+
+  async function fetchCard(
+    currentScore: number,
+    srcLang: string,
+    tgtLang: string,
+    seen: string[]
+  ): Promise<FlashcardResponse> {
+    const payload = makePayload(currentScore, srcLang, tgtLang, seen);
+    return await getNextGameQuestion(payload);
+  }
+
+  async function prefetchNextCard(
     currentScore: number,
     srcLang: string,
     tgtLang: string,
     seen: string[]
   ) {
-    setLoading(true);
-    setError("");
+    if (gameOver) return;
 
     try {
-      const payload = {
-  topic: getTopicFromScore(currentScore),
-  difficulty: getDifficultyFromScore(currentScore),
-  source_language: srcLang,
-  target_language: tgtLang,
-  num_options: 4,
-  text_type: "phrase",
-  exclude_source_texts: seen,
-  batch_size: 5,
-};
+      setPrefetching(true);
+      const next = await fetchCard(currentScore, srcLang, tgtLang, seen);
 
-const res = await getNextGameQuestion(payload);
-
-      if (seen.includes(res.source_text)) {
-        throw new Error("Received a repeated question from the backend.");
+      if (seen.includes(next.source_text)) {
+        return;
       }
 
-      setCard(res);
-      setSeenSourceTexts((prev) => [...prev, res.source_text]);
+      prefetchedCardRef.current = next;
+    } catch (err) {
+      console.error("Prefetch failed:", err);
+    } finally {
+      setPrefetching(false);
+    }
+  }
+
+  async function loadInitialCard() {
+    setLoading(true);
+    setError("");
+    prefetchedCardRef.current = null;
+
+    try {
+      const firstCard = await fetchCard(0, sourceLanguage, targetLanguage, []);
+      setCard(firstCard);
+      setSeenSourceTexts([firstCard.source_text]);
+
+      prefetchNextCard(
+        0,
+        sourceLanguage,
+        targetLanguage,
+        [firstCard.source_text]
+      );
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data) {
@@ -82,7 +126,7 @@ const res = await getNextGameQuestion(payload);
       } else if (err?.message) {
         setError(err.message);
       } else {
-        setError("Failed to generate game card.");
+        setError("Failed to start game.");
       }
     } finally {
       setLoading(false);
@@ -96,25 +140,85 @@ const res = await getNextGameQuestion(payload);
     setStarted(true);
     setCard(null);
     setSeenSourceTexts([]);
-    fetchNextCard(0, sourceLanguage, targetLanguage, []);
+    loadInitialCard();
+  }
+
+  async function moveToNextCard(
+    nextScore: number,
+    nextLives: number,
+    srcLang: string,
+    tgtLang: string,
+    seen: string[]
+  ) {
+    if (nextLives <= 0) {
+      setGameOver(true);
+      setCard(null);
+      prefetchedCardRef.current = null;
+      return;
+    }
+
+    const prefetched = prefetchedCardRef.current;
+
+    if (prefetched && !seen.includes(prefetched.source_text)) {
+      setCard(prefetched);
+
+      const updatedSeen = [...seen, prefetched.source_text];
+      setSeenSourceTexts(updatedSeen);
+      prefetchedCardRef.current = null;
+
+      prefetchNextCard(nextScore, srcLang, tgtLang, updatedSeen);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const next = await fetchCard(nextScore, srcLang, tgtLang, seen);
+      setCard(next);
+
+      const updatedSeen = [...seen, next.source_text];
+      setSeenSourceTexts(updatedSeen);
+
+      prefetchNextCard(nextScore, srcLang, tgtLang, updatedSeen);
+    } catch (err: any) {
+      console.error(err);
+      if (err?.response?.data) {
+        setError(JSON.stringify(err.response.data));
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError("Failed to load next question.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleCorrect() {
     const nextScore = score + 1;
     setScore(nextScore);
-    fetchNextCard(nextScore, sourceLanguage, targetLanguage, seenSourceTexts);
+
+    moveToNextCard(
+      nextScore,
+      lives,
+      sourceLanguage,
+      targetLanguage,
+      seenSourceTexts
+    );
   }
 
   function handleWrong() {
     const nextLives = lives - 1;
     setLives(nextLives);
 
-    if (nextLives <= 0) {
-      setGameOver(true);
-      return;
-    }
-
-    fetchNextCard(score, sourceLanguage, targetLanguage, seenSourceTexts);
+    moveToNextCard(
+      score,
+      nextLives,
+      sourceLanguage,
+      targetLanguage,
+      seenSourceTexts
+    );
   }
 
   return (
@@ -183,8 +287,10 @@ const res = await getNextGameQuestion(payload);
           </div>
 
           <div className="stat-card">
-            <span className="stat-label">Seen</span>
-            <span className="stat-value">{seenSourceTexts.length}</span>
+            <span className="stat-label">Buffer</span>
+            <span className="stat-value">
+              {prefetching ? "Loading..." : prefetchedCardRef.current ? "Ready" : "Empty"}
+            </span>
           </div>
         </div>
 
@@ -219,6 +325,7 @@ const res = await getNextGameQuestion(payload);
           card={card}
           onCorrect={handleCorrect}
           onWrong={handleWrong}
+          disabled={loading}
         />
       )}
     </div>
