@@ -128,7 +128,7 @@ export default function TopicPage() {
       )}
 
       {error && <ErrorMessage message={error} />}
-      {result && <FlashcardResult card={result} />}
+      {result && <FlashcardResult key={result.source_text} card={result} />}
     </div>
   );
 }

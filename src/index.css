@@ -34,11 +34,16 @@ button {
     transform 0.15s ease,
     box-shadow 0.15s ease,
     background 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 button:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
 }
 
 button:disabled {
@@ -127,6 +132,7 @@ button:disabled {
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  animation: fadeSlideUp 0.28s ease;
 }
 
 .panel-header h1,
@@ -183,6 +189,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 14px;
+  animation: fadeSlideUp 0.2s ease;
 }
 
 .spinner {
@@ -199,6 +206,62 @@ textarea {
     transform: rotate(360deg);
   }
 }
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseCorrect {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shakeWrong {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 
 .badge-row {
   display: flex;
@@ -259,6 +322,16 @@ textarea {
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #0f172a;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.option-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .option-selected {
@@ -269,11 +342,13 @@ textarea {
 .option-correct {
   background: #dcfce7;
   border-color: #22c55e;
+  animation: pulseCorrect 0.28s ease;
 }
 
 .option-wrong {
   background: #fee2e2;
   border-color: #ef4444;
+  animation: shakeWrong 0.28s ease;
 }
 
 .answer-feedback {
@@ -281,6 +356,7 @@ textarea {
   padding: 12px 14px;
   border-radius: 12px;
   font-weight: 700;
+  animation: popIn 0.2s ease;
 }
 
 .feedback-correct {

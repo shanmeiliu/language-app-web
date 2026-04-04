@@ -321,12 +321,13 @@ export default function GamePage() {
       )}
 
       {started && !gameOver && card && !loading && (
-        <GameCard
-          card={card}
-          onCorrect={handleCorrect}
-          onWrong={handleWrong}
-          disabled={loading}
-        />
+       <GameCard
+        key={card.source_text}
+        card={card}
+        onCorrect={handleCorrect}
+        onWrong={handleWrong}
+        disabled={loading}
+    />
       )}
     </div>
   );
