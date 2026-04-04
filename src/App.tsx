@@ -1,10 +1,11 @@
 import { useState } from "react";
 import PhrasePage from "./pages/PhrasePage";
 import TopicPage from "./pages/TopicPage";
+import GamePage from "./pages/GamePage";
 import "./index.css";
 
 export default function App() {
-  const [tab, setTab] = useState<"phrase" | "topic">("phrase");
+  const [tab, setTab] = useState<"phrase" | "topic" | "game">("phrase");
 
   return (
     <div className="app-shell">
@@ -29,10 +30,21 @@ export default function App() {
           >
             Topic
           </button>
+          <button
+            type="button"
+            className={tab === "game" ? "tab-button active" : "tab-button"}
+            onClick={() => setTab("game")}
+          >
+            Challenge
+          </button>
         </div>
       </header>
 
-      <main>{tab === "phrase" ? <PhrasePage /> : <TopicPage />}</main>
+      <main>
+        {tab === "phrase" && <PhrasePage />}
+        {tab === "topic" && <TopicPage />}
+        {tab === "game" && <GamePage />}
+      </main>
     </div>
   );
 }

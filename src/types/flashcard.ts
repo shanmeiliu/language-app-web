@@ -27,4 +27,15 @@ export type TopicFlashcardRequest = {
   target_language: string;
   num_options: number;
   text_type?: string | null;
+  exclude_source_texts?: string[];
+};
+
+
+export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
+
+export type GameState = {
+  score: number;
+  lives: number;
+  difficulty: DifficultyLevel;
+  gameOver: boolean;
 };
