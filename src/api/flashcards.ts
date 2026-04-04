@@ -22,3 +22,10 @@ export async function generateTopicFlashcard(
   const res = await api.post("/api/flashcards/topic", payload);
   return res.data;
 }
+
+export async function getNextGameQuestion(
+  payload: TopicFlashcardRequest & { exclude_source_texts?: string[]; batch_size?: number }
+): Promise<FlashcardResponse> {
+  const res = await api.post<FlashcardResponse>("/api/game/next-question", payload);
+  return res.data;
+}

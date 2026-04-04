@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { generateTopicFlashcard } from "../api/flashcards";
 import ErrorMessage from "../components/ErrorMessage";
 import GameCard from "../components/GameCard";
+import { getNextGameQuestion } from "../api/flashcards";
+
 import type {
   DifficultyLevel,
   FlashcardResponse,
@@ -55,17 +56,18 @@ export default function GamePage() {
     setError("");
 
     try {
-      const payload: TopicFlashcardRequest = {
-        topic: getTopicFromScore(currentScore),
-        difficulty: getDifficultyFromScore(currentScore),
-        source_language: srcLang,
-        target_language: tgtLang,
-        num_options: 4,
-        text_type: "phrase",
-        exclude_source_texts: seen,
-      };
+      const payload = {
+  topic: getTopicFromScore(currentScore),
+  difficulty: getDifficultyFromScore(currentScore),
+  source_language: srcLang,
+  target_language: tgtLang,
+  num_options: 4,
+  text_type: "phrase",
+  exclude_source_texts: seen,
+  batch_size: 5,
+};
 
-      const res = await generateTopicFlashcard(payload);
+const res = await getNextGameQuestion(payload);
 
       if (seen.includes(res.source_text)) {
         throw new Error("Received a repeated question from the backend.");
