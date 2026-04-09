@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import AppLayout from "./components/AppLayout";
-import RequireAuth from "./components/RequireAuth";
+import AuthGate from "./components/AuthGate";
 import LoginPage from "./pages/LoginPage";
 import MagicLogin from "./pages/MagicLogin";
 import PhrasePage from "./pages/PhrasePage";
@@ -16,16 +16,31 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/magic-login" element={<MagicLogin />} />
 
-        <Route
-          element={
-            <RequireAuth>
-              <AppLayout />
-            </RequireAuth>
-          }
-        >
-          <Route path="/" element={<PhrasePage />} />
-          <Route path="/topic" element={<TopicPage />} />
-          <Route path="/game" element={<GamePage />} />
+        <Route element={<AppLayout />}>
+          <Route
+            path="/"
+            element={
+              <AuthGate>
+                <PhrasePage />
+              </AuthGate>
+            }
+          />
+          <Route
+            path="/topic"
+            element={
+              <AuthGate>
+                <TopicPage />
+              </AuthGate>
+            }
+          />
+          <Route
+            path="/game"
+            element={
+              <AuthGate>
+                <GamePage />
+              </AuthGate>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />

@@ -580,3 +580,60 @@ select {
 .avatar-circle:hover {
   transform: scale(1.1);
 }
+
+.auth-preview-shell {
+  position: relative;
+}
+
+.auth-preview-content {
+  position: relative;
+}
+
+.blurred-preview {
+  filter: blur(10px) saturate(0.9);
+  pointer-events: none;
+  user-select: none;
+  transform: scale(1.01);
+}
+
+.blurred-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.35);
+  pointer-events: none;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.14);
+}
+
+.login-overlay-card {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14);
+  padding: 28px;
+  animation: fadeSlideUp 0.25s ease;
+}
+
+.overlay-action-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.overlay-footnote {
+  margin-top: 16px;
+  font-size: 0.85rem;
+}
