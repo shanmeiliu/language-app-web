@@ -1,50 +1,35 @@
-import { useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import AppLayout from "./components/AppLayout";
+import RequireAuth from "./components/RequireAuth";
+import LoginPage from "./pages/LoginPage";
+import MagicLogin from "./pages/MagicLogin";
 import PhrasePage from "./pages/PhrasePage";
 import TopicPage from "./pages/TopicPage";
 import GamePage from "./pages/GamePage";
 import "./index.css";
 
 export default function App() {
-  const [tab, setTab] = useState<"phrase" | "topic" | "game">("phrase");
-
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Language Learning App</p>
-          <h1 className="app-title">AI Flashcards</h1>
-        </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/magic-login" element={<MagicLogin />} />
 
-        <div className="tab-row">
-          <button
-            type="button"
-            className={tab === "phrase" ? "tab-button active" : "tab-button"}
-            onClick={() => setTab("phrase")}
-          >
-            Phrase
-          </button>
-          <button
-            type="button"
-            className={tab === "topic" ? "tab-button active" : "tab-button"}
-            onClick={() => setTab("topic")}
-          >
-            Topic
-          </button>
-          <button
-            type="button"
-            className={tab === "game" ? "tab-button active" : "tab-button"}
-            onClick={() => setTab("game")}
-          >
-            Challenge
-          </button>
-        </div>
-      </header>
+        <Route
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/" element={<PhrasePage />} />
+          <Route path="/topic" element={<TopicPage />} />
+          <Route path="/game" element={<GamePage />} />
+        </Route>
 
-      <main>
-        {tab === "phrase" && <PhrasePage />}
-        {tab === "topic" && <TopicPage />}
-        {tab === "game" && <GamePage />}
-      </main>
-    </div>
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
