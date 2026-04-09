@@ -5,6 +5,7 @@ export type AuthUser = {
   account_type: string;
   email?: string | null;
   username: string;
+  display_name?: string | null;
   is_active: boolean;
 };
 

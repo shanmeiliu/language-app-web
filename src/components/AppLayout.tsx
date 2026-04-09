@@ -8,22 +8,23 @@ function formatAccountType(type: string) {
   return type;
 }
 
-// 👇 helper to get initials
-function getInitials(username: string) {
-  if (!username) return "?";
+function getInitials(name: string) {
+  if (!name) return "?";
 
-  const parts = username.split("_");
-  if (parts.length > 1) {
-    return parts[1][0]?.toUpperCase() || "?";
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
-  return username.slice(0, 1).toUpperCase();
+  return name.slice(0, 1).toUpperCase();
 }
 
 export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+
+  const displayName = user?.display_name || user?.username || "";
 
   function isActive(path: string) {
     return location.pathname === path;
@@ -79,11 +80,11 @@ export default function AppLayout() {
               <>
                 <div className="user-profile">
                   <div className="avatar-circle">
-                    {getInitials(user.username)}
+                    {getInitials(displayName)}
                   </div>
 
                   <div className="user-info">
-                    <span className="user-name">{user.username}</span>
+                    <span className="user-name">{displayName}</span>
                     <span className="user-meta">
                       {formatAccountType(user.account_type)}
                     </span>
