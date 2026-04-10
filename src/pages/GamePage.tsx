@@ -402,10 +402,10 @@ export default function GamePage() {
             </span>
           </div>
 
-          <div className="stat-card">
+          {/* <div className="stat-card">
             <span className="stat-label">Topic</span>
             <span className="stat-value">{topic}</span>
-          </div>
+          </div> */}
 
           <div className="stat-card">
             <span className="stat-label">Seen</span>
