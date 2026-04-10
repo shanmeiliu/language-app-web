@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CreatableSelect from "react-select/creatable";
 import { generateTopicFlashcard } from "../api/flashcards";
 import FlashcardResult from "../components/FlashcardResult";
 import ErrorMessage from "../components/ErrorMessage";
@@ -13,29 +14,29 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const DIFFICULTY_OPTIONS = [
-  "beginner",
-  "intermediate",
-  "advanced",
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
 ];
 
 const TEXT_TYPE_OPTIONS = [
-  "phrase",
-  "idiom",
-  "proverb",
-  "sentence",
+  { value: "phrase", label: "Phrase" },
+  { value: "idiom", label: "Idiom" },
+  { value: "proverb", label: "Proverb" },
+  { value: "sentence", label: "Sentence" },
 ];
 
-const TOPIC_SUGGESTIONS = [
-  "daily conversation",
-  "travel",
-  "business",
-  "food",
-  "shopping",
-  "family",
-  "workplace",
-  "classical literature",
-  "idioms",
-  "proverbs",
+const TOPIC_OPTIONS = [
+  { value: "daily conversation", label: "Daily Conversation" },
+  { value: "travel", label: "Travel" },
+  { value: "business", label: "Business" },
+  { value: "food", label: "Food" },
+  { value: "shopping", label: "Shopping" },
+  { value: "family", label: "Family" },
+  { value: "workplace", label: "Workplace" },
+  { value: "classical literature", label: "Classical Literature" },
+  { value: "idioms", label: "Idioms" },
+  { value: "proverbs", label: "Proverbs" },
 ];
 
 const MAX_SESSION_CARDS = 8;
@@ -65,6 +66,11 @@ export default function TopicPage() {
       return;
     }
 
+    if (!topic.trim()) {
+      setError("Please enter a topic.");
+      return;
+    }
+
     if (showInitialLoading) {
       setLoading(true);
     } else {
@@ -75,7 +81,7 @@ export default function TopicPage() {
 
     try {
       const res = await generateTopicFlashcard({
-        topic,
+        topic: topic.trim(),
         difficulty,
         source_language: sourceLanguage,
         target_language: targetLanguage,
@@ -159,17 +165,30 @@ export default function TopicPage() {
           <div className="form-grid">
             <label>
               Topic
-              <input
-                list="topic-suggestions"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="Enter a topic"
+              <CreatableSelect
+                options={TOPIC_OPTIONS}
+                value={topic ? { value: topic, label: topic } : null}
+                onChange={(option) => setTopic(option?.value || "")}
+                onCreateOption={(inputValue) => setTopic(inputValue)}
+                placeholder="Search or type a topic..."
+                isClearable
+                formatCreateLabel={(inputValue) => `Use custom topic: "${inputValue}"`}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: 48,
+                    borderRadius: 14,
+                    borderColor: "#cbd5e1",
+                    boxShadow: "none",
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    zIndex: 20,
+                  }),
+                }}
               />
-              <datalist id="topic-suggestions">
-                {TOPIC_SUGGESTIONS.map((item) => (
-                  <option key={item} value={item} />
-                ))}
-              </datalist>
             </label>
 
             <label>
@@ -179,8 +198,8 @@ export default function TopicPage() {
                 onChange={(e) => setDifficulty(e.target.value)}
               >
                 {DIFFICULTY_OPTIONS.map((level) => (
-                  <option key={level} value={level}>
-                    {level[0].toUpperCase() + level.slice(1)}
+                  <option key={level.value} value={level.value}>
+                    {level.label}
                   </option>
                 ))}
               </select>
@@ -223,8 +242,8 @@ export default function TopicPage() {
                 onChange={(e) => setTextType(e.target.value)}
               >
                 {TEXT_TYPE_OPTIONS.map((type) => (
-                  <option key={type} value={type}>
-                    {type[0].toUpperCase() + type.slice(1)}
+                  <option key={type.value} value={type.value}>
+                    {type.label}
                   </option>
                 ))}
               </select>
@@ -252,7 +271,7 @@ export default function TopicPage() {
             <button
               type="submit"
               className="primary-button"
-              disabled={loading || isSameLanguage}
+              disabled={loading || isSameLanguage || !topic.trim()}
             >
               {loading ? "Generating..." : "Generate Flashcard"}
             </button>
