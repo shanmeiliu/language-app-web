@@ -4,6 +4,23 @@ import FlashcardResult from "../components/FlashcardResult";
 import ErrorMessage from "../components/ErrorMessage";
 import type { FlashcardResponse } from "../types/flashcard";
 
+const LANGUAGE_OPTIONS = [
+  "Chinese",
+  "English",
+  "French",
+  "Japanese",
+  "Spanish",
+];
+
+const TEXT_TYPE_OPTIONS = [
+  "phrase",
+  "idiom",
+  "proverb",
+  "sentence",
+];
+
+const MAX_SESSION_CARDS = 6;
+
 export default function PhrasePage() {
   const [phrases, setPhrases] = useState("守株待兔\n杞人忧天");
   const [sourceLanguage, setSourceLanguage] = useState("Chinese");
@@ -17,10 +34,17 @@ export default function PhrasePage() {
   const [result, setResult] = useState<FlashcardResponse | null>(null);
   const [seenSourceTexts, setSeenSourceTexts] = useState<string[]>([]);
 
+  const isSameLanguage = sourceLanguage === targetLanguage;
+
   async function requestFlashcard(
     showInitialLoading: boolean,
     excludeSeen: boolean = true
   ) {
+    if (isSameLanguage) {
+      setError("Source and target language cannot be the same.");
+      return;
+    }
+
     if (showInitialLoading) {
       setLoading(true);
     } else {
@@ -53,7 +77,11 @@ export default function PhrasePage() {
       console.error(err);
 
       if (err?.response?.data) {
-        setError(JSON.stringify(err.response.data));
+        setError(
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : JSON.stringify(err.response.data)
+        );
       } else if (err?.message) {
         setError(err.message);
       } else {
@@ -73,12 +101,29 @@ export default function PhrasePage() {
   }
 
   async function handleTryAnother() {
+    if (seenSourceTexts.length >= MAX_SESSION_CARDS) {
+      setError(
+        "No more high-quality phrase cards are available for this input. Reset seen cards or change the phrases."
+      );
+      return;
+    }
+
     await requestFlashcard(false, true);
   }
 
   function handleResetSeen() {
     setSeenSourceTexts([]);
     setError("");
+  }
+
+  function handleSourceLanguageChange(newSource: string) {
+    setSourceLanguage(newSource);
+
+    if (newSource === targetLanguage) {
+      const fallback =
+        LANGUAGE_OPTIONS.find((lang) => lang !== newSource) || "";
+      setTargetLanguage(fallback);
+    }
   }
 
   return (
@@ -101,33 +146,53 @@ export default function PhrasePage() {
               value={phrases}
               onChange={(e) => setPhrases(e.target.value)}
               rows={6}
-              placeholder="守株待兔&#10;杞人忧天"
+              placeholder={"守株待兔\n杞人忧天"}
             />
           </label>
 
           <div className="form-grid">
             <label>
               Source Language
-              <input
+              <select
                 value={sourceLanguage}
-                onChange={(e) => setSourceLanguage(e.target.value)}
-              />
+                onChange={(e) => handleSourceLanguageChange(e.target.value)}
+              >
+                {LANGUAGE_OPTIONS.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {lang}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>
               Target Language
-              <input
+              <select
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value)}
-              />
+              >
+                {LANGUAGE_OPTIONS.filter((lang) => lang !== sourceLanguage).map(
+                  (lang) => (
+                    <option key={lang} value={lang}>
+                      {lang}
+                    </option>
+                  )
+                )}
+              </select>
             </label>
 
             <label>
               Text Type
-              <input
+              <select
                 value={textType}
                 onChange={(e) => setTextType(e.target.value)}
-              />
+              >
+                {TEXT_TYPE_OPTIONS.map((type) => (
+                  <option key={type} value={type}>
+                    {type[0].toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>
@@ -142,8 +207,18 @@ export default function PhrasePage() {
             </label>
           </div>
 
+          {isSameLanguage && (
+            <div className="error-box">
+              Source and target language cannot be the same.
+            </div>
+          )}
+
           <div className="action-row">
-            <button type="submit" className="primary-button" disabled={loading}>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={loading || isSameLanguage}
+            >
               {loading ? "Generating..." : "Generate Flashcard"}
             </button>
           </div>
@@ -152,7 +227,11 @@ export default function PhrasePage() {
         {seenSourceTexts.length > 0 && (
           <div className="session-meta">
             <p className="muted">Seen this session: {seenSourceTexts.length}</p>
-            <button type="button" className="secondary-button" onClick={handleResetSeen}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetSeen}
+            >
               Reset Seen Cards
             </button>
           </div>
@@ -167,12 +246,14 @@ export default function PhrasePage() {
       )}
 
       {error && <ErrorMessage message={error} />}
+
       {result && (
         <FlashcardResult
           key={result.source_text}
           card={result}
           onTryAnother={handleTryAnother}
           loadingNext={loadingAnother}
+          exhausted={seenSourceTexts.length >= MAX_SESSION_CARDS}
         />
       )}
     </div>

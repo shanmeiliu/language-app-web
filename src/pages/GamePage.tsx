@@ -16,6 +16,13 @@ const LANGUAGE_OPTIONS = [
   "Spanish",
 ];
 
+const TEXT_TYPE_OPTIONS = [
+  "phrase",
+  "idiom",
+  "proverb",
+  "sentence",
+];
+
 function getDifficultyFromScore(score: number): DifficultyLevel {
   if (score >= 8) return "advanced";
   if (score >= 4) return "intermediate";
@@ -31,6 +38,7 @@ function getTopicFromScore(score: number): string {
 export default function GamePage() {
   const [sourceLanguage, setSourceLanguage] = useState("Chinese");
   const [targetLanguage, setTargetLanguage] = useState("English");
+  const [textType, setTextType] = useState("phrase");
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -47,12 +55,14 @@ export default function GamePage() {
 
   const difficulty = useMemo(() => getDifficultyFromScore(score), [score]);
   const topic = useMemo(() => getTopicFromScore(score), [score]);
+  const isSameLanguage = sourceLanguage === targetLanguage;
 
   function makePayload(
     currentScore: number,
     srcLang: string,
     tgtLang: string,
-    seen: string[]
+    seen: string[],
+    currentTextType: string
   ): TopicFlashcardRequest & {
     exclude_source_texts?: string[];
     batch_size?: number;
@@ -63,7 +73,7 @@ export default function GamePage() {
       source_language: srcLang,
       target_language: tgtLang,
       num_options: 4,
-      text_type: "phrase",
+      text_type: currentTextType,
       exclude_source_texts: seen,
       batch_size: 5,
     };
@@ -73,9 +83,16 @@ export default function GamePage() {
     currentScore: number,
     srcLang: string,
     tgtLang: string,
-    seen: string[]
+    seen: string[],
+    currentTextType: string
   ): Promise<FlashcardResponse> {
-    const payload = makePayload(currentScore, srcLang, tgtLang, seen);
+    const payload = makePayload(
+      currentScore,
+      srcLang,
+      tgtLang,
+      seen,
+      currentTextType
+    );
     return await getNextGameQuestion(payload);
   }
 
@@ -83,13 +100,20 @@ export default function GamePage() {
     currentScore: number,
     srcLang: string,
     tgtLang: string,
-    seen: string[]
+    seen: string[],
+    currentTextType: string
   ) {
-    if (gameOver) return;
+    if (gameOver || isSameLanguage) return;
 
     try {
       setPrefetching(true);
-      const next = await fetchCard(currentScore, srcLang, tgtLang, seen);
+      const next = await fetchCard(
+        currentScore,
+        srcLang,
+        tgtLang,
+        seen,
+        currentTextType
+      );
 
       if (seen.includes(next.source_text)) {
         return;
@@ -104,12 +128,23 @@ export default function GamePage() {
   }
 
   async function loadInitialCard() {
+    if (isSameLanguage) {
+      setError("Source and target language cannot be the same.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     prefetchedCardRef.current = null;
 
     try {
-      const firstCard = await fetchCard(0, sourceLanguage, targetLanguage, []);
+      const firstCard = await fetchCard(
+        0,
+        sourceLanguage,
+        targetLanguage,
+        [],
+        textType
+      );
       setCard(firstCard);
       setSeenSourceTexts([firstCard.source_text]);
 
@@ -117,12 +152,17 @@ export default function GamePage() {
         0,
         sourceLanguage,
         targetLanguage,
-        [firstCard.source_text]
+        [firstCard.source_text],
+        textType
       );
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data) {
-        setError(JSON.stringify(err.response.data));
+        setError(
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : JSON.stringify(err.response.data)
+        );
       } else if (err?.message) {
         setError(err.message);
       } else {
@@ -134,12 +174,18 @@ export default function GamePage() {
   }
 
   function startGame() {
+    if (isSameLanguage) {
+      setError("Source and target language cannot be the same.");
+      return;
+    }
+
     setScore(0);
     setLives(3);
     setGameOver(false);
     setStarted(true);
     setCard(null);
     setSeenSourceTexts([]);
+    setError("");
     loadInitialCard();
   }
 
@@ -148,7 +194,8 @@ export default function GamePage() {
     nextLives: number,
     srcLang: string,
     tgtLang: string,
-    seen: string[]
+    seen: string[],
+    currentTextType: string
   ) {
     if (nextLives <= 0) {
       setGameOver(true);
@@ -166,7 +213,13 @@ export default function GamePage() {
       setSeenSourceTexts(updatedSeen);
       prefetchedCardRef.current = null;
 
-      prefetchNextCard(nextScore, srcLang, tgtLang, updatedSeen);
+      prefetchNextCard(
+        nextScore,
+        srcLang,
+        tgtLang,
+        updatedSeen,
+        currentTextType
+      );
       return;
     }
 
@@ -174,17 +227,33 @@ export default function GamePage() {
     setError("");
 
     try {
-      const next = await fetchCard(nextScore, srcLang, tgtLang, seen);
+      const next = await fetchCard(
+        nextScore,
+        srcLang,
+        tgtLang,
+        seen,
+        currentTextType
+      );
       setCard(next);
 
       const updatedSeen = [...seen, next.source_text];
       setSeenSourceTexts(updatedSeen);
 
-      prefetchNextCard(nextScore, srcLang, tgtLang, updatedSeen);
+      prefetchNextCard(
+        nextScore,
+        srcLang,
+        tgtLang,
+        updatedSeen,
+        currentTextType
+      );
     } catch (err: any) {
       console.error(err);
       if (err?.response?.data) {
-        setError(JSON.stringify(err.response.data));
+        setError(
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : JSON.stringify(err.response.data)
+        );
       } else if (err?.message) {
         setError(err.message);
       } else {
@@ -204,7 +273,8 @@ export default function GamePage() {
       lives,
       sourceLanguage,
       targetLanguage,
-      seenSourceTexts
+      seenSourceTexts,
+      textType
     );
   }
 
@@ -217,8 +287,19 @@ export default function GamePage() {
       nextLives,
       sourceLanguage,
       targetLanguage,
-      seenSourceTexts
+      seenSourceTexts,
+      textType
     );
+  }
+
+  function handleSourceLanguageChange(newSource: string) {
+    setSourceLanguage(newSource);
+
+    if (newSource === targetLanguage) {
+      const fallback =
+        LANGUAGE_OPTIONS.find((lang) => lang !== newSource) || "";
+      setTargetLanguage(fallback);
+    }
   }
 
   return (
@@ -229,7 +310,8 @@ export default function GamePage() {
             <p className="eyebrow">Challenge Mode</p>
             <h1>Flashcard Game</h1>
             <p className="muted">
-              Answer correctly to increase your score. Difficulty rises as you progress.
+              Answer correctly to increase your score. Difficulty rises as you
+              progress.
             </p>
           </div>
         </div>
@@ -239,7 +321,7 @@ export default function GamePage() {
             Source Language
             <select
               value={sourceLanguage}
-              onChange={(e) => setSourceLanguage(e.target.value)}
+              onChange={(e) => handleSourceLanguageChange(e.target.value)}
               disabled={started && !gameOver}
             >
               {LANGUAGE_OPTIONS.map((lang) => (
@@ -257,14 +339,37 @@ export default function GamePage() {
               onChange={(e) => setTargetLanguage(e.target.value)}
               disabled={started && !gameOver}
             >
-              {LANGUAGE_OPTIONS.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang}
+              {LANGUAGE_OPTIONS.filter((lang) => lang !== sourceLanguage).map(
+                (lang) => (
+                  <option key={lang} value={lang}>
+                    {lang}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+
+          <label>
+            Text Type
+            <select
+              value={textType}
+              onChange={(e) => setTextType(e.target.value)}
+              disabled={started && !gameOver}
+            >
+              {TEXT_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {type[0].toUpperCase() + type.slice(1)}
                 </option>
               ))}
             </select>
           </label>
         </div>
+
+        {isSameLanguage && (
+          <div className="error-box">
+            Source and target language cannot be the same.
+          </div>
+        )}
 
         <div className="game-stats">
           <div className="stat-card">
@@ -289,14 +394,33 @@ export default function GamePage() {
           <div className="stat-card">
             <span className="stat-label">Buffer</span>
             <span className="stat-value">
-              {prefetching ? "Loading..." : prefetchedCardRef.current ? "Ready" : "Empty"}
+              {prefetching
+                ? "Loading..."
+                : prefetchedCardRef.current
+                  ? "Ready"
+                  : "Empty"}
             </span>
+          </div>
+
+          <div className="stat-card">
+            <span className="stat-label">Topic</span>
+            <span className="stat-value">{topic}</span>
+          </div>
+
+          <div className="stat-card">
+            <span className="stat-label">Seen</span>
+            <span className="stat-value">{seenSourceTexts.length}</span>
           </div>
         </div>
 
         <div className="action-row">
           {!started || gameOver ? (
-            <button type="button" className="primary-button" onClick={startGame}>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={startGame}
+              disabled={isSameLanguage}
+            >
               {gameOver ? "Play Again" : "Start Game"}
             </button>
           ) : null}
@@ -316,18 +440,20 @@ export default function GamePage() {
         <div className="panel game-over-panel">
           <p className="eyebrow">Game Over</p>
           <h2>Your final score: {score}</h2>
-          <p className="muted">You ran out of lives. Start a new game to try again.</p>
+          <p className="muted">
+            You ran out of lives. Start a new game to try again.
+          </p>
         </div>
       )}
 
       {started && !gameOver && card && !loading && (
-       <GameCard
-        key={card.source_text}
-        card={card}
-        onCorrect={handleCorrect}
-        onWrong={handleWrong}
-        disabled={loading}
-    />
+        <GameCard
+          key={card.source_text}
+          card={card}
+          onCorrect={handleCorrect}
+          onWrong={handleWrong}
+          disabled={loading}
+        />
       )}
     </div>
   );
