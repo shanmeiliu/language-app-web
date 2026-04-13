@@ -54,7 +54,7 @@ export default function GamePage() {
   const prefetchedCardRef = useRef<FlashcardResponse | null>(null);
 
   const difficulty = useMemo(() => getDifficultyFromScore(score), [score]);
-  const topic = useMemo(() => getTopicFromScore(score), [score]);
+  // const topic = useMemo(() => getTopicFromScore(score), [score]);
   const isSameLanguage = sourceLanguage === targetLanguage;
 
   function makePayload(
