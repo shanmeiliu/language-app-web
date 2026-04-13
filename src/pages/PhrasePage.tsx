@@ -19,12 +19,22 @@ const TEXT_TYPE_OPTIONS = [
   "sentence",
 ];
 
+const SAMPLE_PHRASES_BY_LANGUAGE: Record<string, string> = {
+  Chinese: "守株待兔\n杞人忧天",
+  English: "Break the ice\nOnce in a blue moon",
+  French: "Avoir le cafard\nPoser un lapin",
+  Japanese: "猿も木から落ちる\n七転び八起き",
+  Spanish: "Más vale tarde que nunca\nEstar en las nubes",
+};
+
 const MAX_SESSION_CARDS = 6;
 
 export default function PhrasePage() {
-  const [phrases, setPhrases] = useState("守株待兔\n杞人忧天");
   const [sourceLanguage, setSourceLanguage] = useState("Chinese");
   const [targetLanguage, setTargetLanguage] = useState("English");
+  const [phrases, setPhrases] = useState(
+    SAMPLE_PHRASES_BY_LANGUAGE["Chinese"]
+  );
   const [numOptions, setNumOptions] = useState(4);
   const [textType, setTextType] = useState("idiom");
 
@@ -35,6 +45,9 @@ export default function PhrasePage() {
   const [seenSourceTexts, setSeenSourceTexts] = useState<string[]>([]);
 
   const isSameLanguage = sourceLanguage === targetLanguage;
+  const samplePlaceholder =
+    SAMPLE_PHRASES_BY_LANGUAGE[sourceLanguage] ||
+    "Enter sample phrases, one per line";
 
   async function requestFlashcard(
     showInitialLoading: boolean,
@@ -124,6 +137,14 @@ export default function PhrasePage() {
         LANGUAGE_OPTIONS.find((lang) => lang !== newSource) || "";
       setTargetLanguage(fallback);
     }
+
+    setPhrases(
+      SAMPLE_PHRASES_BY_LANGUAGE[newSource] ||
+        "Enter sample phrases, one per line"
+    );
+    setResult(null);
+    setSeenSourceTexts([]);
+    setError("");
   }
 
   return (
@@ -146,7 +167,7 @@ export default function PhrasePage() {
               value={phrases}
               onChange={(e) => setPhrases(e.target.value)}
               rows={6}
-              placeholder={"守株待兔\n杞人忧天"}
+              placeholder={samplePlaceholder}
             />
           </label>
 
