@@ -5,12 +5,14 @@ type Props = {
   card: FlashcardResponse;
   onTryAnother?: () => void;
   loadingNext?: boolean;
+  exhausted?: boolean;
 };
 
 export default function FlashcardResult({
   card,
   onTryAnother,
   loadingNext = false,
+  exhausted = false,
 }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -107,9 +109,13 @@ export default function FlashcardResult({
                   type="button"
                   className="primary-button"
                   onClick={onTryAnother}
-                  disabled={loadingNext}
+                  disabled={loadingNext || exhausted}
                 >
-                  {loadingNext ? "Loading..." : "Try Another"}
+                  {exhausted
+                    ? "No More Strong Cards"
+                    : loadingNext
+                      ? "Loading..."
+                      : "Try Another"}
                 </button>
               )}
             </>
@@ -117,22 +123,30 @@ export default function FlashcardResult({
         </div>
 
         {submitted && (
-          <div className={`answer-feedback ${isCorrect ? "feedback-correct" : "feedback-wrong"}`}>
+          <div
+            className={`answer-feedback ${
+              isCorrect ? "feedback-correct" : "feedback-wrong"
+            }`}
+          >
             {isCorrect ? "Correct!" : "Not quite."}
           </div>
         )}
       </div>
 
-      <div className="section">
-        <h3>Correct Answer</h3>
-        <p className="answer-text">{card.target_text}</p>
-      </div>
+      {submitted && (
+        <>
+          <div className="section">
+            <h3>Correct Answer</h3>
+            <p className="answer-text">{card.target_text}</p>
+          </div>
 
-      {card.explanation && (
-        <div className="section">
-          <h3>Explanation</h3>
-          <p>{card.explanation}</p>
-        </div>
+          {card.explanation && (
+            <div className="section">
+              <h3>Explanation</h3>
+              <p>{card.explanation}</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
