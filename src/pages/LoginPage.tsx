@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { apiUrl } from "../lib/api";
+
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -9,7 +11,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/magic-link/start", {
+      const res = await fetch(apiUrl("/auth/magic-link/start"), {
         method: "POST",
         credentials: "include",
       });
@@ -30,7 +32,7 @@ export default function LoginPage() {
   }
 
   function handleGoogleLogin() {
-    window.location.href = "http://127.0.0.1:8000/auth/google/login";
+    window.location.href = apiUrl("/auth/google/login");
   }
 
   return (

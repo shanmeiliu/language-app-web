@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { apiUrl } from "../lib/api";
 
 function formatAccountType(type: string) {
   if (type === "google") return "Google";
@@ -32,7 +33,7 @@ export default function AppLayout() {
 
   async function handleLogout() {
     try {
-      await fetch("http://127.0.0.1:8000/auth/logout", {
+      await fetch(apiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       });

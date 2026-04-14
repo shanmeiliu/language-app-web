@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 export type AuthUser = {
   user_id: string;
@@ -15,7 +16,7 @@ export function useAuth() {
 
   async function refreshUser() {
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/me", {
+      const res = await fetch(apiUrl("/auth/me"), {
         credentials: "include",
       });
 

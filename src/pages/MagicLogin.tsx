@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { apiUrl } from "../lib/api";
+
+
 
 export default function MagicLogin() {
   const [params] = useSearchParams();
@@ -18,7 +21,7 @@ export default function MagicLogin() {
     async function redeem() {
       try {
         const res = await fetch(
-          `http://127.0.0.1:8000/auth/magic-link/redeem?token=${token}`,
+          apiUrl(`/auth/magic-link/redeem?token=${token}`),
           {
             method: "POST",
             credentials: "include",
