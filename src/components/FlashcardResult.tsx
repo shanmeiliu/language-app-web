@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { recordCardAnswer, recordCardShown } from "../api/progress";
 import type { FlashcardResponse } from "../types/flashcard";
 
 type Props = {
@@ -16,15 +17,64 @@ export default function FlashcardResult({
 }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   const isCorrect = useMemo(() => {
     if (!selectedOption) return false;
     return selectedOption === card.target_text;
   }, [selectedOption, card.target_text]);
 
-  function handleSubmitAnswer() {
-    if (!selectedOption) return;
+  useEffect(() => {
+    let cancelled = false;
+
+    setSelectedOption(null);
+    setSubmitted(false);
+    setAttemptId(null);
+
+    async function trackShown() {
+      if (!card.flashcard_id) {
+        console.warn("Cannot track shown card because flashcard_id is missing.");
+        return;
+      }
+
+      try {
+        const res = await recordCardShown({
+          flashcard_id: card.flashcard_id,
+          mode: card.prompt_type,
+        });
+
+        if (!cancelled) {
+          setAttemptId(res.attempt_id);
+        }
+      } catch (err) {
+        console.error("Failed to track shown card:", err);
+      }
+    }
+
+    trackShown();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [card.flashcard_id, card.prompt_type]);
+
+  async function handleSubmitAnswer() {
+    if (!selectedOption || submitted) return;
+
     setSubmitted(true);
+
+    if (attemptId) {
+      try {
+        await recordCardAnswer({
+          attempt_id: attemptId,
+          selected_option: selectedOption,
+          correct_answer: card.target_text,
+          is_correct: selectedOption === card.target_text,
+        });
+      } catch (err) {
+        console.error("Failed to track answer:", err);
+      }
+    }
   }
 
   function handleResetAnswer() {
@@ -38,7 +88,9 @@ export default function FlashcardResult({
         <span className="badge">{card.prompt_type}</span>
         {card.text_type && <span className="badge">{card.text_type}</span>}
         {card.difficulty && <span className="badge">{card.difficulty}</span>}
-        <span className={`badge ${card.cache_hit ? "badge-cache" : "badge-fresh"}`}>
+        <span
+          className={`badge ${card.cache_hit ? "badge-cache" : "badge-fresh"}`}
+        >
           {card.cache_hit ? "cache hit" : "fresh"}
         </span>
       </div>

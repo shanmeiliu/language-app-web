@@ -2,6 +2,7 @@ export type FlashcardResponse = {
   source_language: string;
   target_language: string;
   prompt_type: string;
+  flashcard_id: string;
   text_type: string | null;
   difficulty: string | null;
   topic: string | null;

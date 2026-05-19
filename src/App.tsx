@@ -6,6 +6,7 @@ import MagicLogin from "./pages/MagicLogin";
 import PhrasePage from "./pages/PhrasePage";
 import TopicPage from "./pages/TopicPage";
 import GamePage from "./pages/GamePage";
+import DashboardPage from "./pages/DashboardPage";
 import "./index.css";
 
 const basePath = import.meta.env.VITE_APP_BASE_PATH || "/";

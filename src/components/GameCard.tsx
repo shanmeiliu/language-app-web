@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { recordCardAnswer, recordCardShown } from "../api/progress";
 import type { FlashcardResponse } from "../types/flashcard";
 
 type Props = {
@@ -16,18 +17,64 @@ export default function GameCard({
 }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     setSelectedOption(null);
     setSubmitted(false);
-  }, [card]);
+    setAttemptId(null);
 
-  function handleCheckAnswer() {
+    async function trackShown() {
+      if (!card.flashcard_id) {
+        console.warn(
+          "Cannot track shown game card because flashcard_id is missing."
+        );
+        return;
+      }
+
+      try {
+        const res = await recordCardShown({
+          flashcard_id: card.flashcard_id,
+          mode: "game",
+        });
+
+        if (!cancelled) {
+          setAttemptId(res.attempt_id);
+        }
+      } catch (err) {
+        console.error("Failed to track shown game card:", err);
+      }
+    }
+
+    trackShown();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [card.flashcard_id]);
+
+  async function handleCheckAnswer() {
     if (!selectedOption || submitted || disabled) return;
 
+    const correct = selectedOption === card.target_text;
     setSubmitted(true);
 
-    if (selectedOption === card.target_text) {
+    if (attemptId) {
+      try {
+        await recordCardAnswer({
+          attempt_id: attemptId,
+          selected_option: selectedOption,
+          correct_answer: card.target_text,
+          is_correct: correct,
+        });
+      } catch (err) {
+        console.error("Failed to track game answer:", err);
+      }
+    }
+
+    if (correct) {
       setTimeout(() => {
         onCorrect();
       }, 700);
