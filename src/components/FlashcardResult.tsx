@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { recordCardAnswer, recordCardShown } from "../api/progress";
+import { recordCardAnswer } from "../api/progress";
 import type { FlashcardResponse } from "../types/flashcard";
 
 type Props = {
@@ -17,7 +17,6 @@ export default function FlashcardResult({
 }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   const isCorrect = useMemo(() => {
     if (!selectedOption) return false;
@@ -25,55 +24,30 @@ export default function FlashcardResult({
   }, [selectedOption, card.target_text]);
 
   useEffect(() => {
-    let cancelled = false;
-
     setSelectedOption(null);
     setSubmitted(false);
-    setAttemptId(null);
-
-    async function trackShown() {
-      if (!card.flashcard_id) {
-        console.warn("Cannot track shown card because flashcard_id is missing.");
-        return;
-      }
-
-      try {
-        const res = await recordCardShown({
-          flashcard_id: card.flashcard_id,
-          mode: card.prompt_type,
-        });
-
-        if (!cancelled) {
-          setAttemptId(res.attempt_id);
-        }
-      } catch (err) {
-        console.error("Failed to track shown card:", err);
-      }
-    }
-
-    trackShown();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [card.flashcard_id, card.prompt_type]);
+  }, [card.flashcard_id]);
 
   async function handleSubmitAnswer() {
     if (!selectedOption || submitted) return;
 
     setSubmitted(true);
 
-    if (attemptId) {
-      try {
-        await recordCardAnswer({
-          attempt_id: attemptId,
-          selected_option: selectedOption,
-          correct_answer: card.target_text,
-          is_correct: selectedOption === card.target_text,
-        });
-      } catch (err) {
-        console.error("Failed to track answer:", err);
-      }
+    if (!card.flashcard_id) {
+      console.warn("Cannot track answer because flashcard_id is missing.");
+      return;
+    }
+
+    try {
+      await recordCardAnswer({
+        flashcard_id: card.flashcard_id,
+        selected_option: selectedOption,
+        correct_answer: card.target_text,
+        is_correct: selectedOption === card.target_text,
+        mode: card.prompt_type,
+      });
+    } catch (err) {
+      console.error("Failed to track answer:", err);
     }
   }
 

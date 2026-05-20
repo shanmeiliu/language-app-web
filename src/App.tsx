@@ -36,6 +36,14 @@ export default function App() {
             }
           />
           <Route
+  path="/dashboard"
+  element={
+    <AuthGate>
+      <DashboardPage />
+    </AuthGate>
+  }
+/>
+          <Route
             path="/game"
             element={
               <AuthGate>

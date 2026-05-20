@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { recordCardAnswer, recordCardShown } from "../api/progress";
+import { recordCardAnswer } from "../api/progress";
 import type { FlashcardResponse } from "../types/flashcard";
 
 type Props = {
@@ -17,42 +17,10 @@ export default function GameCard({
 }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [attemptId, setAttemptId] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
     setSelectedOption(null);
     setSubmitted(false);
-    setAttemptId(null);
-
-    async function trackShown() {
-      if (!card.flashcard_id) {
-        console.warn(
-          "Cannot track shown game card because flashcard_id is missing."
-        );
-        return;
-      }
-
-      try {
-        const res = await recordCardShown({
-          flashcard_id: card.flashcard_id,
-          mode: "game",
-        });
-
-        if (!cancelled) {
-          setAttemptId(res.attempt_id);
-        }
-      } catch (err) {
-        console.error("Failed to track shown game card:", err);
-      }
-    }
-
-    trackShown();
-
-    return () => {
-      cancelled = true;
-    };
   }, [card.flashcard_id]);
 
   async function handleCheckAnswer() {
@@ -61,17 +29,20 @@ export default function GameCard({
     const correct = selectedOption === card.target_text;
     setSubmitted(true);
 
-    if (attemptId) {
+    if (card.flashcard_id) {
       try {
         await recordCardAnswer({
-          attempt_id: attemptId,
+          flashcard_id: card.flashcard_id,
           selected_option: selectedOption,
           correct_answer: card.target_text,
           is_correct: correct,
+          mode: "game",
         });
       } catch (err) {
         console.error("Failed to track game answer:", err);
       }
+    } else {
+      console.warn("Cannot track game answer because flashcard_id is missing.");
     }
 
     if (correct) {
@@ -103,8 +74,9 @@ export default function GameCard({
         <div className="options-grid">
           {card.options.map((option) => {
             const selected = selectedOption === option;
-            const correct = submitted && option === card.target_text;
-            const wrong = submitted && selected && option !== card.target_text;
+            const correctOption = submitted && option === card.target_text;
+            const wrongOption =
+              submitted && selected && option !== card.target_text;
 
             return (
               <button
@@ -114,8 +86,8 @@ export default function GameCard({
                 className={[
                   "option-button",
                   selected ? "option-selected" : "",
-                  correct ? "option-correct" : "",
-                  wrong ? "option-wrong" : "",
+                  correctOption ? "option-correct" : "",
+                  wrongOption ? "option-wrong" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}

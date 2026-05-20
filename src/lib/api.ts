@@ -7,3 +7,10 @@ export function apiUrl(path: string) {
 
   return `${API_BASE}${path}`;
 }
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  return fetch(apiUrl(path), {
+    credentials: "include",
+    ...options,
+  });
+}

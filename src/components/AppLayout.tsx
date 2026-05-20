@@ -72,6 +72,13 @@ export default function AppLayout() {
             >
               Challenge
             </Link>
+            
+            <Link
+  to="/dashboard"
+  className={isActive("/dashboard") ? "tab-button active" : "tab-button"}
+>
+  Dashboard
+</Link>
           </div>
 
           <div className="user-bar">
